@@ -1,0 +1,8 @@
+fastapi==0.103.0
+uvicorn==0.23.2
+opencv-python==4.9.0.80
+pytesseract==0.3.10
+notion-client==2.2.1
+requests==2.31.0
+python-dotenv==1.0.1
+numpy==1.26.4
