@@ -6,3 +6,5 @@ notion-client==2.2.1
 requests==2.31.0
 python-dotenv==1.0.1
 numpy==1.26.4
+google-cloud-vision==3.7.2
+
