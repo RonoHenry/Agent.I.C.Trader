@@ -1,26 +1,32 @@
-from backend.config.groq_config import settings
+import unittest
+from backend.utils.mt5_client import MT5Client
 import MetaTrader5 as mt5
+import argparse
 
-print("Starting MT5 test")
+class TestMT5Client(unittest.TestCase):
+    def setUp(self):
+        parser = argparse.ArgumentParser(description="MT5 Client Test")
+        parser.add_argument("--login", type=int, default=102183587, help="MT5 account login number")
+        parser.add_argument("--password", type=str, default="8*04M^d?", help="MT5 account password")
+        parser.add_argument("--server", type=str, default="FBS-Demo", help="MT5 server name")
+        args = parser.parse_args()
 
-# Initialize MT5
-if not mt5.initialize():
-    print(f"Initialization failed: {mt5.last_error()}")
-    quit()
-print("MT5 initialized")
+        self.client = MT5Client(login=args.login, password=args.password, server=args.server)
 
-# Login to MT5 using settings
-if not mt5.login(settings.MT5_LOGIN, settings.MT5_PASSWORD, settings.MT5_SERVER):
-    print(f"Login failed: {mt5.last_error()}")
-    quit()
-print("Logged in")
+    def test_connect(self):
+        self.assertTrue(self.client.connect(), "Failed to connect to MT5")
+        self.assertTrue(self.client.connected, "Client not marked as connected")
 
-# Print account info
-account_info = mt5.account_info()
-if account_info is None:
-    print(f"Failed to retrieve account info: {mt5.last_error()}")
-else:
-    print(f"Account Info: {account_info}")
+    def test_get_ohlc_data(self):
+        self.assertTrue(self.client.connect(), "Failed to connect to MT5")
+        data = self.client.get_ohlc_data("EURUSD", mt5.TIMEFRAME_M15, 10)
+        self.assertIsNotNone(data, "Failed to fetch OHLC data")
+        self.assertEqual(len(data), 10, "Incorrect number of candles fetched")
+        self.assertTrue('time' in data.columns, "Time column missing in OHLC data")
+        self.client.disconnect()
 
-# Shutdown MT5
-mt5.shutdown()
+    def tearDown(self):
+        self.client.disconnect()
+
+if __name__ == "__main__":
+    unittest.main()
