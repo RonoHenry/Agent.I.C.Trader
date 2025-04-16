@@ -36,7 +36,7 @@ class MT5Client:
                 "H1": mt5.TIMEFRAME_H1, "H2": mt5.TIMEFRAME_H2,
                 "H3": mt5.TIMEFRAME_H3, "H4": mt5.TIMEFRAME_H4,
                 "H6": mt5.TIMEFRAME_H6, "H8": mt5.TIMEFRAME_H8,
-                "H12": mt5.TIMEFRAME_H12, "D1": mt5.TIMEFRAME_D1
+                "H12": mt5.TIMEFRAME_H12, "D1": mt5.TIMEFRAME_D1,
             }
             if timeframe not in tf_map:
                 self.logger.error(f"Unsupported timeframe: {timeframe}")
