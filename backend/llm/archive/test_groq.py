@@ -1,5 +1,5 @@
 # test_groq.py
-from backend.llm.groq_client import explain_setup
+from backend.llm.gemini_client import explain_setup
 
 print("Testing Groq API")
 try:
