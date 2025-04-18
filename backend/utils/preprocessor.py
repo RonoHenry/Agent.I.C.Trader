@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 def preprocess_mt5_data(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Preprocess MT5 OHLCV data for analysis.
+    Preprocess MT5 OHLCV data for ICT analysis.
     
     Args:
         data (pd.DataFrame): Raw MT5 data with columns ['time', 'open', 'high', 'low', 'close', 'volume']
@@ -24,7 +24,7 @@ def preprocess_mt5_data(data: pd.DataFrame) -> pd.DataFrame:
 
         # Convert 'time' to datetime if not already
         if not pd.api.types.is_datetime64_any_dtype(data['time']):
-            data['time'] = pd.to_datetime(data['time'])
+            data['time'] = pd.to_datetime(data['time'], unit='s')  # MT5 timestamps are in seconds
 
         # Set 'time' as index
         data = data.set_index('time')
@@ -35,6 +35,9 @@ def preprocess_mt5_data(data: pd.DataFrame) -> pd.DataFrame:
         # Ensure numeric types
         for col in ['open', 'high', 'low', 'close', 'volume']:
             data[col] = pd.to_numeric(data[col], errors='coerce')
+
+        # Remove duplicates
+        data = data[~data.index.duplicated(keep='last')]
 
         logger.info("MT5 data preprocessed successfully")
         return data

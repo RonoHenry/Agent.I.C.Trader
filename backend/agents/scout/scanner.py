@@ -4,26 +4,25 @@ from backend.data_clients.mt5_client import MT5Client
 from backend.utils.preprocessor import preprocess_mt5_data
 from backend.llm.gemini_client import GeminiClient
 from backend.llm.prompts import get_ict_prompt
-from backend.agents.scout.models.ml.orderblock_lens import OrderBlockLens
-from backend.agents.scout.models.ml.fairvaluegap_lens import FairValueGapLens
-from backend.agents.scout.models.ml.killzone_lens import KillzoneLens
-from backend.agents.scout.models.ml.liquiditysweep_lens import LiquiditySweepLens
-from backend.agents.scout.models.ml.Candleprofile_lens import CandleProfileLens
-from backend.agents.scout.models.ml.Midnightopen_lens import MidnightOpenLens
-from backend.agents.scout.models.ml.Ny08_30pen_lens import Ny08_30PenLens
-from backend.agents.scout.models.ml.breakerblock_lens import BreakerBlockLens
-from backend.agents.scout.models.ml.cotreport_lens import COTReportLens
-from backend.agents.scout.models.ml.crt_lens import CRTLens
-from backend.agents.scout.models.ml.fractal_lens import FractalLens
-from backend.agents.scout.models.ml.ict_ensemble_lens import ICTEnsembleLens
-from backend.agents.scout.models.ml.inversionfvg_lens import InversionFVGLens
-from backend.agents.scout.models.ml.opening_gaps_lens import OpeningGapsLens
-from backend.agents.scout.models.ml.ote_lens import OTELens
-from backend.agents.scout.models.ml.powerof3_lens import PowerOf3Lens
-from backend.agents.scout.models.ml.quarterly_theory_lens import QuarterlyTheoryLens
-from backend.agents.scout.models.ml.seasonaltendency_lens import SeasonalTendencyLens
-from backend.agents.scout.models.ml.smtdivergence_lens import SMTDivergenceLens
-from backend.agents.scout.models.ml.std_projection_lens import StdProjectionLens
+from backend.agents.scout.models.ml.orderblock_lens import OrderBlockDetector
+from backend.agents.scout.models.ml.fairvaluegap_lens import FVGDetector
+from backend.agents.scout.models.ml.killzone_lens import KillzoneDetector
+from backend.agents.scout.models.ml.liquiditysweep_lens import LiquiditySweepDetector
+from backend.agents.scout.models.ml.candleprofile_lens import ProfileDetector
+from backend.agents.scout.models.ml.open_lens import OpenDetector
+from backend.agents.scout.models.ml.breakerblock_lens import BreakerDetector
+from backend.agents.scout.models.ml.cot_lens import COTDetector
+from backend.agents.scout.models.ml.crt_lens import CRTDetector
+from backend.agents.scout.models.ml.fractal_lens import FractalDetector
+from backend.agents.scout.models.ml.inversionfvg_lens import ImpliedFVGDetector
+from backend.agents.scout.models.ml.gap_lens import GapDetector
+from backend.agents.scout.models.ml.ote_lens import OTEDetector
+from backend.agents.scout.models.ml.powerof3_lens import PowerOfThreeDetector
+from backend.agents.scout.models.ml.quarterly_lens import QuarterlyDetector
+from backend.agents.scout.models.ml.seasonal_lens import SeasonalDetector
+from backend.agents.scout.models.ml.smtdivergence_lens import SMTDivergenceDetector
+from backend.agents.scout.models.ml.stddev_lens import StdDevDetector
+from backend.agents.scout.models.ml.ict_ensemble_lens import ICTEnsemble
 from backend.agents.scout.models.dspy.setup_lens import ICTSetupLens
 import logging
 
@@ -32,35 +31,38 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class Scanner:
-    def __init__(self):
-        self.ml_lenses = {
-            "OrderBlock": OrderBlockLens(),
-            "FairValueGap": FairValueGapLens(),
-            "Killzone": KillzoneLens(),
-            "LiquiditySweep": LiquiditySweepLens(),
-            "CandleProfile": CandleProfileLens(),
-            "MidnightOpen": MidnightOpenLens(),
-            "Ny08_30Pen": Ny08_30PenLens(),
-            "BreakerBlock": BreakerBlockLens(),
-            "COTReport": COTReportLens(),
-            "CRT": CRTLens(),
-            "Fractal": FractalLens(),
-            "ICTEnsemble": ICTEnsembleLens(),
-            "InversionFVG": InversionFVGLens(),
-            "OpeningGaps": OpeningGapsLens(),
-            "OTE": OTELens(),
-            "PowerOf3": PowerOf3Lens(),
-            "QuarterlyTheory": QuarterlyTheoryLens(),
-            "SeasonalTendency": SeasonalTendencyLens(),
-            "SMTDivergence": SMTDivergenceLens(),
-            "StdProjection": StdProjectionLens(),
+    def __init__(self, symbol: str = "EURUSD", timeframe: str = "H1"):
+        self.symbol = symbol
+        self.timeframe = timeframe
+        self.lenses = {
+            "OrderBlock": OrderBlockDetector(symbol, timeframe),
+            "FairValueGap": FVGDetector(symbol, timeframe),
+            "Killzone": KillzoneDetector(symbol, timeframe),
+            "LiquiditySweep": LiquiditySweepDetector(symbol, timeframe),
+            "CandleProfile": ProfileDetector(symbol, timeframe),
+            "Open": OpenDetector(symbol, timeframe),
+            "BreakerBlock": BreakerDetector(symbol, timeframe),
+            "COT": COTDetector(symbol, timeframe),
+            "CRT": CRTDetector(symbol, timeframe),
+            "Fractal": FractalDetector(symbol, timeframe),
+            "InversionFVG": ImpliedFVGDetector(symbol, timeframe, higher_timeframe="H4"),
+            "Gap": GapDetector(symbol, timeframe),
+            "OTE": OTEDetector(symbol, timeframe),
+            "PowerOf3": PowerOfThreeDetector(symbol, timeframe),
+            "Quarterly": QuarterlyDetector(symbol, timeframe),
+            "Seasonal": SeasonalDetector(symbol, timeframe),
+            "SMTDivergence": SMTDivergenceDetector(symbol, correlated_symbol="GBPUSD", timeframe=timeframe),
+            "StdDev": StdDevDetector(symbol, timeframe),
+            "ICTEnsemble": ICTEnsemble(symbol, timeframe),
         }
         self.dspy_lens = ICTSetupLens()
         self.gemini = GeminiClient()
-        logger.info("Scanner initialized with ML, DSPy, and Gemini")
+        logger.info("Scanner initialized with lenses, DSPy, and Gemini")
 
-    def scan(self, symbol: str, timeframe: str, count: int = 1000, concepts: list = None) -> dict:
-        """Scan market data for ICT setups using ML, DSPy, and Gemini."""
+    def scan(self, symbol: str = None, timeframe: str = None, count: int = 1000, concepts: list = None) -> dict:
+        """Scan market data for ICT setups using lenses, DSPy, and Gemini."""
+        symbol = symbol or self.symbol
+        timeframe = timeframe or self.timeframe
         if concepts is None:
             concepts = ["Fair Value Gap", "Order Block", "Killzone"]
 
@@ -68,17 +70,24 @@ class Scanner:
         market_data = self.fetch_mt5_data(symbol, timeframe, count)
         market_data = preprocess_mt5_data(market_data)
 
-        # Run ML lenses
-        ml_results = {name: lens.predict(market_data) for name, lens in self.ml_lenses.items()}
+        # Run lenses
+        lens_results = {}
+        for name, lens in self.lenses.items():
+            try:
+                lens.candles = market_data  # Inject preprocessed data
+                lens_results[name] = lens.detect()
+            except Exception as e:
+                logger.error(f"Error in {name} lens: {str(e)}")
+                lens_results[name] = []
 
-        # Run DSPy lens
-        dspy_results = {setup: self.dspy_lens(market_data, setup) for setup in ml_results}
+        # Run DSPy lens (assuming it processes lens outputs)
+        dspy_results = {setup: self.dspy_lens(market_data, setup) for setup in lens_results}
 
         # Run Gemini analysis
         gemini_results = {}
         try:
             data_str = market_data.tail(5).to_string()
-            prompt = get_ict_prompt(data_str, concepts)
+            prompt = get_ict_prompt(data_str, concepts, lens_results)
             gemini_response = self.gemini.generate_content(prompt)
             gemini_results = {"Gemini": {"analysis": gemini_response, "confidence": 0.7}}  # Placeholder confidence
         except Exception as e:
@@ -86,7 +95,7 @@ class Scanner:
             gemini_results = {"Gemini": {"error": str(e), "confidence": 0.0}}
 
         # Combine results
-        return self.combine_results(ml_results, dspy_results, gemini_results)
+        return self.combine_results(lens_results, dspy_results, gemini_results)
 
     def fetch_mt5_data(self, symbol: str, timeframe: str, count: int = 1000) -> pd.DataFrame:
         """Fetch MT5 data with CSV fallback."""
@@ -101,22 +110,22 @@ class Scanner:
                 return pd.read_csv(fallback_path, parse_dates=["time"], index_col="time")
             raise
 
-    def combine_results(self, ml_results: dict, dspy_results: dict, gemini_results: dict) -> dict:
-        """Combine ML, DSPy, and Gemini results with weighted confidence."""
+    def combine_results(self, lens_results: dict, dspy_results: dict, gemini_results: dict) -> dict:
+        """Combine lens, DSPy, and Gemini results with weighted confidence."""
         combined = {}
-        for setup in ml_results:
-            ml_conf = ml_results[setup].get("confidence", 0.5)
+        for setup in lens_results:
+            lens_conf = len(lens_results[setup]) > 0 if lens_results[setup] else 0.5  # Simplified confidence
             dspy_conf = dspy_results[setup].get("confidence", 0.5)
             gemini_conf = gemini_results.get("Gemini", {}).get("confidence", 0.5)
             combined[setup] = {
-                "ml": ml_results[setup],
+                "lens": lens_results[setup],
                 "dspy": dspy_results[setup],
                 "gemini": gemini_results.get("Gemini", {"analysis": "N/A", "confidence": 0.0}),
-                "confidence": (ml_conf + dspy_conf + gemini_conf) / 3  # Equal weighting
+                "confidence": (lens_conf + dspy_conf + gemini_conf) / 3
             }
         return combined
 
 if __name__ == "__main__":
     scanner = Scanner()
-    result = scanner.scan(symbol="EURUSD", timeframe="H1", count=100, concepts=["Fair Value Gap"])
+    result = scanner.scan(count=100, concepts=["Fair Value Gap"])
     print(result)

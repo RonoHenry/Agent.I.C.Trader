@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from datetime import time
+from .base_detector import ICTDetector
 
 class OrderBlockLens:
     def __init__(self):

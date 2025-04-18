@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from .base_detector import ICTDetector
 
 class CandleProfileLens:
     def predict(self, market_data: pd.DataFrame) -> dict:

@@ -1,4 +1,5 @@
 import pandas as pd
+from .base_detector import ICTDetector
 
 class PowerOf3Lens:
     def predict(self, market_data: pd.DataFrame) -> dict:

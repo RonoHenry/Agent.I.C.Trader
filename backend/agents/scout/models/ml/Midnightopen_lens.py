@@ -1,5 +1,6 @@
 import pandas as pd
 from datetime import time
+from .base_detector import ICTDetector
 
 class MidnightOpenLens:
     def predict(self, market_data: pd.DataFrame) -> dict:
